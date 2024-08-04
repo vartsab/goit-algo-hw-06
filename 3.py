@@ -148,30 +148,59 @@ for stops, distances in [(stations_R, distances_R), (stations_N, distances_N), (
     for i in range(len(stops) - 1):
         G.add_edge(stops[i], stops[i + 1], weight=distances[i], line='R' if stops == stations_R else 'N' if stops == stations_N else 'D')
 
-# Функція для алгоритму Дейкстри
+# Функція для алгоритму Дейкстри без використання сторонніх бібліотек
 def dijkstra(graph, start, goal):
-    try:
-        length, path = nx.single_source_dijkstra(graph, source=start, target=goal, weight='weight')
-        return path, length
-    except nx.NetworkXNoPath:
-        return None, float('inf')
+    # Ініціалізація відстаней
+    distances = {node: float('inf') for node in graph.nodes}
+    distances[start] = 0
+    previous_nodes = {node: None for node in graph.nodes}
+    unvisited = list(graph.nodes)
+    
+    while unvisited:
+        # Вибір вузла з найменшою відстанню
+        current_node = min(unvisited, key=lambda node: distances[node])
+        unvisited.remove(current_node)
+        
+        if distances[current_node] == float('inf'):
+            break
+        
+        # Оновлення відстаней до сусідніх вузлів
+        for neighbor, attrs in graph[current_node].items():
+            weight = attrs.get('weight', 1)
+            distance = distances[current_node] + weight
+            if distance < distances[neighbor]:
+                distances[neighbor] = distance
+                previous_nodes[neighbor] = current_node
+                
+        if current_node == goal:
+            break
+
+    # Відновлення шляху
+    path, current = [], goal
+    while previous_nodes[current] is not None:
+        path.insert(0, current)
+        current = previous_nodes[current]
+    if path:
+        path.insert(0, current)
+    
+    return path, distances[goal]
 
 # Пошук найкоротшого шляху між всіма вершинами
-all_shortest_paths = {}
+all_shortest_paths_custom = {}
 for source in G.nodes():
-    all_shortest_paths[source] = {}
+    all_shortest_paths_custom[source] = {}
     for target in G.nodes():
         if source != target:
             path, length = dijkstra(G, source, target)
-            all_shortest_paths[source][target] = (path, length)
+            all_shortest_paths_custom[source][target] = (path, length)
 
 # Виведення прикладу результатів
 start_station = "Forest Hills - 71 Av"
 goal_station = "Coney Island - Stillwell Av"
 
-shortest_path, path_length = dijkstra(G, start_station, goal_station)
-print(f"Shortest path from {start_station} to {goal_station}: {shortest_path} with total length: {path_length}")
+shortest_path_custom, path_length_custom = dijkstra(G, start_station, goal_station)
+print(f"Shortest path from {start_station} to {goal_station}: {shortest_path_custom} with total length: {path_length_custom}")
 
 # Аналіз результатів
-num_paths = sum(len(paths) for paths in all_shortest_paths.values())
-print(f"Total number of shortest paths calculated: {num_paths}")
+num_paths_custom = sum(len(paths) for paths in all_shortest_paths_custom.values())
+print(f"Total number of shortest paths calculated: {num_paths_custom}")
